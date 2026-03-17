@@ -40,7 +40,7 @@ src/
 ```bash
 # Với Docker (khuyến nghị)
 docker run --name erp-postgres \
-  -e POSTGRES_PASSWORD=yourpassword \
+  -e POSTGRES_PASSWORD=uit\
   -e POSTGRES_DB=erp_db \
   -p 5432:5432 \
   -d postgres:15
