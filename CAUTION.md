@@ -11,3 +11,5 @@ git push origin main
 trước khi vào làm mỗi ngày thì lấy code mới nhất về
 
 # git pull origin main
+
+khi mới clone code mới về và chưa từng setup database
