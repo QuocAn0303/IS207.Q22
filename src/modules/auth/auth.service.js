@@ -88,6 +88,14 @@ const getProfile = async (userId) => {
 const changePassword = async (userId, { currentPassword, newPassword }) => {
   // 1. Lấy user — cần lấy cả password hash để verify
   const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw { status: 404, message: "Không tìm thấy người dùng" };
+  }
+
+  // xét mật khẩu mới phải khác mật khẩu hiện tại
+  if (currentPassword === newPassword) {
+    throw { status: 400, message: "Mật khẩu mới phải khác mật khẩu hiện tại" };
+  }
 
   // 2. Kiểm tra mật khẩu hiện tại có đúng không
   const isValid = await bcrypt.compare(currentPassword, user.password);
