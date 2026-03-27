@@ -3,76 +3,111 @@ const prisma = require('../../config/prisma');
 const inventoryService = {
   // Lấy tồn kho theo sản phẩm
   getByProduct: async (productId) => {
-    return await prisma.product.findUnique({
-      where: { id: productId },
-      select: { id: true, name: true, sku: true, initialStock: true }
+    return await prisma.inventory.findUnique({
+      where: { productId },
+      include: { 
+        product: { select: { name: true, sku: true } } 
+      }
     });
   },
 
-  // Nhập kho (tăng số lượng)
   importStock: async (data, userId) => {
     const { productId, quantity, note } = data;
+    
     return await prisma.$transaction(async (tx) => {
-      // 1. Tăng tồn kho trong bảng Product (hoặc bảng Inventory riêng nếu có)
-      const product = await tx.product.update({
-        where: { id: productId },
-        data: { initialStock: { increment: quantity } }
+
+      const inventory = await tx.inventory.findUnique({
+        where: { productId }
       });
 
-      // 2. Ghi log giao dịch
+      if (!inventory) {
+        const err = new Error("Không tìm thấy thông tin kho của sản phẩm này.");
+        err.status = 404;
+        throw err;
+      }
+
+      const updatedInventory = await tx.inventory.update({
+        where: { id: inventory.id },
+        data: { quantity: { increment: quantity } }
+      });
+
       await tx.inventoryTransaction.create({
         data: {
-          productId,
+          inventoryId: inventory.id,
           type: 'IMPORT',
           quantity,
           note,
           userId
         }
       });
-      return product;
+      
+      return updatedInventory;
     });
   },
 
   // Điều chỉnh kho (kiểm kho)
   adjustment: async (data, userId) => {
     const { productId, actualQuantity, note } = data;
+    
     return await prisma.$transaction(async (tx) => {
-      const product = await tx.product.findUnique({ where: { id: productId } });
-      const diff = actualQuantity - product.initialStock;
-
-      await tx.product.update({
-        where: { id: productId },
-        data: { initialStock: actualQuantity }
+      // 1. Lấy thông tin kho hiện tại
+      const inventory = await tx.inventory.findUnique({ 
+        where: { productId } 
       });
 
+      if (!inventory) {
+        const err = new Error("Không tìm thấy thông tin kho của sản phẩm này.");
+        err.status = 404;
+        throw err;
+      }
+
+      // 2. Tính toán độ chênh lệch (Thực tế trừ đi trên phần mềm)
+      const diff = actualQuantity - inventory.quantity;
+
+      // 3. Cập nhật số lượng thực tế đè lên số cũ
+      const updatedInventory = await tx.inventory.update({
+        where: { id: inventory.id },
+        data: { quantity: actualQuantity }
+      });
+
+      // 4. Ghi log (Số lượng lúc này lưu độ chênh lệch: có thể âm hoặc dương)
       await tx.inventoryTransaction.create({
         data: {
-          productId,
+          inventoryId: inventory.id,
           type: 'ADJUSTMENT',
-          quantity: diff,
+          quantity: diff, 
           note,
           userId
         }
       });
+
+      return updatedInventory; // Đã bổ sung return
     });
   },
 
   // Lấy danh sách sản phẩm sắp hết hàng
   getLowStock: async (threshold = 10) => {
-    return await prisma.product.findMany({
-      where: { initialStock: { lte: threshold } }
+    return await prisma.inventory.findMany({
+      where: { quantity: { lte: threshold } },
+      include: { 
+        product: { select: { name: true, sku: true } } 
+      },
+      orderBy: { quantity: 'asc' }
     });
   },
 
   // Xem lịch sử giao dịch kho
   getTransactions: async (query) => {
-    const { productId, type } = query;
+    const { inventoryId, type } = query;
     return await prisma.inventoryTransaction.findMany({
       where: {
-        productId: productId || undefined,
+        inventoryId: inventoryId || undefined,
         type: type || undefined
       },
-      include: { user: { select: { name: true } }, product: { select: { name: true } } },
+      include: { 
+        user: { select: { name: true } }, 
+        inventory: { include: { product: { select: { name: true, sku: true } } } } 
+      },
       orderBy: { createdAt: 'desc' }
     });
   }
