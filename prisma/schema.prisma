@@ -111,6 +111,7 @@ model Customer {
   email       String?
   address     String?
   totalSpent  Decimal  @default(0) @db.Decimal(12, 2)
+  isActive    Boolean  @default(true)  // mới thêm 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
