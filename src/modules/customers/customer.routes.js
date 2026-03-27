@@ -54,4 +54,14 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
+// API: DELETE /api/customers/:id
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const deletedCustomer = await customerService.remove(req.params.id);
+    success(res, deletedCustomer, 'Xóa khách hàng thành công');
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

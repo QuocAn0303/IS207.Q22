@@ -6,15 +6,17 @@ const prisma = require("../../config/prisma");
 const getAll = async ({ page = 1, limit = 10, search = "" }) => {
   const skip = (page - 1) * limit;
 
-  const where = search
-    ? {
-        OR: [
-          { name: { contains: search, mode: "insensitive" } },
-          { phone: { contains: search, mode: "insensitive" } },
-          { email: { contains: search, mode: "insensitive" } },
-        ],
-      }
-    : {};
+  const where = {               //Sửa lại điều kiện truy vấn để chỉ lấy khách hàng đang hoạt động
+    isActive: true,
+  };
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { phone: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+    ];
+  }
 
   const [customers, total] = await Promise.all([
     prisma.customer.findMany({
@@ -29,7 +31,7 @@ const getAll = async ({ page = 1, limit = 10, search = "" }) => {
         address: true,
         totalSpent: true,
         createdAt: true,
-        isActive: true, //kiểm tra thêm điều kiện này để getAll khách hàng đang hoạt động
+        //isActive: true, Lệnh này chỉ trả về trạng thái hoạt đông của khách hàng, không trả về khách hàng đã bị xóa (isActive: false)
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -81,12 +83,11 @@ const update = async (id, data) => {
 //Xóa khách hàng (Soft Delete)
 const remove = async (id) => {
   // 1. Kiểm tra xem khách hàng có tồn tại không
-  const customer = await prisma.customer.findUnique({
-    where: { id },
-  });
-
+  const customer = await prisma.customer.findUnique({ where: { id } });
   if (!customer) {
-    throw new Error("Không tìm thấy khách hàng này trong hệ thống.");
+    const err = new Error("Không tìm thấy khách hàng này trong hệ thống.");
+    err.status = 404; // Báo cho Error Handler đây là lỗi Not Found vì lỗi cú báo 500 sẽ nghĩ là lỗi server.
+    throw err;
   }
 
   // 2. Ràng buộc: Có đơn hàng đang xử lý hoặc nợ tiền không?
@@ -101,9 +102,9 @@ const remove = async (id) => {
   });
 
   if (blockingOrder) {
-    throw new Error(
-      "Không thể xóa! Khách hàng đang có đơn hàng chưa hoàn tất hoặc công nợ.",
-    );
+    const err = new Error("Không thể xóa! Khách hàng đang có đơn hàng chưa hoàn tất hoặc công nợ.");
+    err.status = 400; // Báo cho Error Handler đây là lỗi do dữ liệu (Bad Request)
+    throw err;
   }
 
   // 3. Thực hiện Soft Delete: Đổi isActive thành false
