@@ -36,13 +36,20 @@ const getById = async (id) => {
 };
 
 const create = async (data) => {
-  const { initialStock = 0, ...productData } = data;
-  return prisma.product.create({
+  return await prisma.product.create({
     data: {
-      ...productData,
-      inventory: { create: { quantity: initialStock } },
-    },
-    include: { category: true, inventory: true },
+      name: data.name,
+      sku: data.sku,
+      price: data.price,
+      costPrice: data.costPrice,
+      categoryId: data.categoryId,
+      
+      inventory: {
+        create: {
+          quantity: 0
+        }
+      }
+    }
   });
 };
 

@@ -33,13 +33,14 @@ const inventoryService = {
 
       await tx.inventoryTransaction.create({
         data: {
-          inventoryId: inventory.id,
-          type: 'IMPORT',
-          quantity,
-          note,
-          userId
+        inventoryId: updatedInventory.id, // 👉 Lấy thẳng ID của kho vừa được update
+        type: "IMPORT",
+        quantity: data.quantity,
+        note: data.note,
         }
       });
+
+return updatedInventory;
       
       return updatedInventory;
     });
