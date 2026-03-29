@@ -49,6 +49,7 @@ model Product {
   id          String   @id @default(uuid())
   sku         String   @unique
   name        String
+  imageUrl    String?
   description String?
   price       Decimal  @db.Decimal(12, 2)
   costPrice   Decimal  @db.Decimal(12, 2)

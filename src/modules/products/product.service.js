@@ -65,4 +65,16 @@ const remove = async (id) => {
   return prisma.product.update({ where: { id }, data: { isActive: false } });
 };
 
-module.exports = { getAll, getById, create, update, remove };
+// Hàm mới: Chỉ dùng để cập nhật mỗi cột imageUrl
+const updateImage = async (id, imageUrl) => {
+  // 1. Kiểm tra xem sản phẩm có tồn tại không trước khi lưu ảnh
+  const product = await prisma.product.findUnique({ where: { id } });
+  if (!product) throw { status: 404, message: 'Không tìm thấy sản phẩm để cập nhật ảnh' };
+
+  return prisma.product.update({
+    where: { id },
+    data: { imageUrl },
+  });
+};
+
+module.exports = { getAll, getById, create, update, remove, updateImage };
