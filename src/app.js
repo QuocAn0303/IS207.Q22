@@ -55,6 +55,9 @@ app.listen(PORT, () => {
   console.log(`  GET    /api/products`);
   console.log(`  POST   /api/orders`);
   console.log(`  GET    /api/dashboard/overview`);
+  console.log(`  POST   /api/inventory/import`);
+  console.log(`  GET    /api/inventory/transactions`);
+  console.log(`  GET    /api/customers`);
 });
 
 module.exports = app;

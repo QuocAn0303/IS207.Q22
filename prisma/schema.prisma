@@ -28,6 +28,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   orders    Order[]
+  inventoryTransactions InventoryTransaction[]
   @@map("users")
 }
 
@@ -99,6 +100,9 @@ model InventoryTransaction {
 
   inventoryId String
   inventory   Inventory @relation(fields: [inventoryId], references: [id])
+
+  createdById String?
+  createdBy   User?            @relation(fields: [createdById], references: [id])
 
   @@map("inventory_transactions")
 }
