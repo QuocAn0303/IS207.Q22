@@ -4,6 +4,7 @@ const { z } = require('zod');
 const productService = require('./product.service');
 const { authenticate, authorize } = require('../../middleware/auth.middleware');
 const { success, created, paginated } = require('../../utils/response');
+const uploadCloud = require('../../config/cloudinary.config');
 
 const productSchema = z.object({
   sku: z.string().min(1, 'SKU không được để trống'),
@@ -47,6 +48,23 @@ router.put('/:id', authorize('ADMIN', 'MANAGER'), async (req, res, next) => {
     const product = await productService.update(req.params.id, req.body);
     success(res, product, 'Cập nhật sản phẩm thành công');
   } catch (err) { next(err); }
+});
+
+// API: POST /api/products/:id/image
+router.post('/:id/image', authorize('ADMIN', 'MANAGER'), uploadCloud.single('image'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw { status: 400, message: 'Vui lòng chọn một file ảnh để upload' };
+    }
+
+    const imageUrl = req.file.path; 
+
+    const updatedProduct = await productService.updateImage(req.params.id, imageUrl);
+
+    success(res, updatedProduct, 'Upload ảnh sản phẩm thành công');
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.delete('/:id', authorize('ADMIN'), async (req, res, next) => {
