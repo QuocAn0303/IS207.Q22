@@ -77,8 +77,12 @@ const inventoryService = {
   },
 
   getTransactions: async (query) => {
-    const { inventoryId, type, page = 1, limit = 20 } = query;
+    const { inventoryId, type } = query;
+    // Fix: Ép kiểu an toàn, nếu truyền character (NaN) thì lấy mặc định là 1 và 20
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.max(1, Number(query.limit) || 20);
     const skip = (page - 1) * limit;
+    
     const where = {
       ...(inventoryId && { inventoryId }),
       ...(type && { type })

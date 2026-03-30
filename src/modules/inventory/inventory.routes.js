@@ -40,8 +40,10 @@ router.post('/adjust', authorize('ADMIN', 'WAREHOUSE'), async (req, res, next) =
 // Lấy danh sách hàng sắp hết
 router.get('/low-stock', authorize('ADMIN', 'WAREHOUSE', 'MANAGER'), async (req, res, next) => {
   try {
-    // Ép kiểu threshold từ query string sang số (mặc định là 10)
-    const threshold = req.query.threshold ? Number(req.query.threshold) : 10;
+    let threshold = 10;
+    if (req.query.threshold && !isNaN(req.query.threshold)) {
+      threshold = Number(req.query.threshold);
+    }
     const products = await inventoryService.getLowStock(threshold);
     success(res, products);
   } catch (err) { next(err); }
