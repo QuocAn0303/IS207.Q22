@@ -18,7 +18,10 @@ const categoryRoutes = require('./modules/categories/category.routes');
 const app = express();
 
 // ==================== Middleware ====================
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // Chỉ cho phép Frontend ở port này truy cập
+  credentials: true // Cho phép gửi kèm token/cookie
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

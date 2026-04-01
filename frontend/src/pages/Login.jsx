@@ -16,9 +16,9 @@ const Login = () => {
     setLoading(true);
     try {
       // Gọi API POST /api/auth/login theo đúng tài liệu 
-      const response = await axiosInstance.post('/api/auth/login', values);
+      const response = await axiosInstance.post('/auth/login', values);
 
-      const { user, token } = response.data;
+      const { user, token } = response.data.data;
 
       // Lưu vào Zustand store 
       loginStore(user, token);

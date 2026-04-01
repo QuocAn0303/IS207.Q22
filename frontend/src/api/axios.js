@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Khởi tạo instance của axios
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:3000', // Kết nối tới Backend cổng 3000 đã setup
+    baseURL: import.meta.env.VITE_API_URL, // Kết nối tới Backend cổng 3000 đã setup
     headers: {
         'Content-Type': 'application/json',
     },
