@@ -29,7 +29,7 @@ router.get('/overview', async (req, res, next) => {
       lowStockProducts,
     ] = await Promise.all([
       prisma.product.count({ where: { isActive: true } }),
-      prisma.customer.count(),
+      prisma.customer.count({ where: { isActive: true } }),
       prisma.order.aggregate({
         where: {
           createdAt: { gte: startOfDay },
