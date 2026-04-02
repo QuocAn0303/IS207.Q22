@@ -79,6 +79,9 @@ const create = async (orderData, userId) => {
 
   const subtotal = orderItems.reduce((sum, item) => sum + Number(item.subtotal), 0);
   const total = subtotal - Number(discount);
+  if (total < 0) {
+  throw { status: 400, message: 'Số tiền giảm giá không được lớn hơn tổng giá trị đơn hàng' };
+  }
   const orderCode = await generateOrderCode();
 
   // Tạo order + cập nhật tồn kho trong 1 transaction
@@ -130,6 +133,9 @@ const create = async (orderData, userId) => {
 };
 
 const updateStatus = async (id, status) => {
+  const orderExists = await prisma.order.findUnique({ where: { id } });
+  if (!orderExists) throw { status: 404, message: 'Không tìm thấy đơn hàng để cập nhật' };
+
   return prisma.order.update({
     where: { id },
     data: { status },
