@@ -11,4 +11,13 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(6, 'Mật khẩu mới tối thiểu 6 ký tự'),
 });
 
-module.exports = { loginSchema, changePasswordSchema };
+const refreshSchema = z.object({
+  refreshToken: z.string().min(10, 'Refresh token không hợp lệ'),
+});
+
+const logoutSchema = z.object({
+  refreshToken: z.string().optional(),
+  all: z.boolean().optional().default(false),
+});
+
+module.exports = { loginSchema, changePasswordSchema, refreshSchema, logoutSchema };

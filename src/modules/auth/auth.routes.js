@@ -16,6 +16,8 @@ const loginLimiter = rateLimit({
 });
 
 router.post("/login", loginLimiter, authController.login);
+router.post('/refresh', authController.refresh); // Lấy access token mới bằng refresh token
+router.post('/logout', authenticate, authController.logout); // Đăng xuất (revoke token)
 router.get("/me", authenticate, authController.getProfile);
 router.put("/change-password", authenticate, authController.changePassword);
 

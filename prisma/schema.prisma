@@ -185,3 +185,17 @@ model OrderItem {
 
   @@map("order_items")
 }
+
+// Lưu refresh token để support refresh / logout
+model RefreshToken {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  isRevoked  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
+}
