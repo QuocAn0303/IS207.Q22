@@ -1,9 +1,11 @@
 // src/middleware/error.middleware.js
 const { ZodError } = require('zod');
 const { Prisma } = require('@prisma/client');
+const logger = require('../utils/logger');
+const ApiError = require('../utils/apiError');
 
 const errorHandler = (err, req, res, next) => {
-  console.error('❌ Error:', err);
+  logger.error('❌ Error: %o', err);
 
   // Zod validation error
   if (err instanceof ZodError) {
@@ -14,7 +16,7 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Prisma unique constraint
+  // Prisma known errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') {
       return res.status(409).json({
@@ -27,11 +29,19 @@ const errorHandler = (err, req, res, next) => {
     }
   }
 
-  // Default error
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Lỗi máy chủ nội bộ',
-  });
+  // ApiError thrown intentionally
+  if (err instanceof ApiError) {
+    return res.status(err.status).json({ success: false, message: err.message, ...(err.details && { details: err.details }) });
+  }
+
+  // Plain object errors like: throw { status: 400, message: '...' }
+  if (err && typeof err === 'object' && (err.status || err.message)) {
+    const status = err.status || 500;
+    return res.status(status).json({ success: false, message: err.message || 'Lỗi máy chủ nội bộ', ...(err.details && { details: err.details }) });
+  }
+
+  // Fallback
+  res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
 };
 
 module.exports = errorHandler;
