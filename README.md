@@ -75,6 +75,8 @@ npm run dev
 
 Server chạy tại: `http://localhost:3000`
 
+- Swagger API docs: `http://localhost:3000/api-docs`
+
 ## 📋 API Endpoints
 
 ### Auth

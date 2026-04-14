@@ -9,7 +9,10 @@ const options = {
       description: "API documentation cho đồ án Quản lý ERP Bán Lẻ",
     },
     servers: [
-      { url: "http://localhost:3000/api/v1", description: "Local Server" },
+      {
+        url: process.env.SWAGGER_SERVER_URL || "http://localhost:3000",
+        description: "Local Server",
+      },
     ],
     components: {
       securitySchemes: {

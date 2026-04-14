@@ -66,6 +66,18 @@ const getById = async (id) => {
 const create = async (orderData, userId) => {
   const { customerId, items, paymentMethod, discount = 0, note } = orderData;
 
+  if (customerId) {
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+    });
+    if (!customer || !customer.isActive) {
+      throw {
+        status: 400,
+        message: "Khách hàng không tồn tại hoặc đã bị vô hiệu hóa",
+      };
+    }
+  }
+
   // Kiểm tra sản phẩm và tính tiền
   const productIds = items.map((i) => i.productId);
   const products = await prisma.product.findMany({
