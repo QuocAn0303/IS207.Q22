@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import axiosInstance from '../api/axios';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
 const formatVND = (amount) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount ?? 0);
 
@@ -75,33 +77,45 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Biểu đồ doanh thu 7 ngày */}
+      {/* Biểu đồ doanh thu 7 ngày bằng Recharts */}
       <div style={{ ...cardStyle, marginBottom: 24 }}>
         <h3>📈 Doanh thu 7 ngày gần nhất</h3>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120 }}>
-          {revenue?.daily?.map((d) => (
-            <div key={d.date} style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ fontSize: 9, color: '#888', marginBottom: 2 }}>
-                {formatVND(d.revenue)}
-              </div>
-              <div
-                title={`${d.date} — ${d.orders} đơn`}
-                style={{
-                  height: `${Math.max((d.revenue / maxRevenue) * 100, 4)}%`,
-                  background: '#3182ce',
-                  borderRadius: '4px 4px 0 0',
-                }}
+        <div style={{ height: 300, marginTop: 16 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={revenue?.daily} margin={{ top: 5, right: 20, bottom: 5, left: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={(date) => date ? date.slice(5) : ''} 
+                axisLine={false} 
+                tickLine={false} 
               />
-              <div style={{ fontSize: 10, color: '#888', marginTop: 4 }}>
-                {d.date.slice(5)}
-              </div>
-            </div>
-          ))}
+              <YAxis 
+                tickFormatter={(val) => `${val / 1000}k`} 
+                axisLine={false} 
+                tickLine={false} 
+                width={80}
+              />
+              <Tooltip 
+                formatter={(value) => [formatVND(value), 'Doanh thu']}
+                labelFormatter={(label) => `Ngày: ${label}`}
+                contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="#3182ce" 
+                strokeWidth={3} 
+                dot={{ r: 4, fill: '#3182ce', strokeWidth: 2 }}
+                activeDot={{ r: 6 }} 
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-        <div style={{ marginTop: 10, fontSize: 13, color: '#555' }}>
-          Tổng: <strong>{formatVND(revenue?.summary?.totalRevenue)}</strong>
+        <div style={{ marginTop: 16, fontSize: 13, color: '#555', textAlign: 'center' }}>
+          Tổng doanh thu (7 ngày): <strong>{formatVND(revenue?.summary?.totalRevenue)}</strong>
           {' · '}
-          <strong>{revenue?.summary?.totalOrders} đơn</strong>
+          <strong>{revenue?.summary?.totalOrders} đơn hàng</strong>
         </div>
       </div>
 
