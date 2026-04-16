@@ -15,6 +15,9 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/products" element={<div>Trang Sản phẩm</div>} />
           <Route path="/inventory" element={<div>Trang Kho</div>} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/customers" element={<Customers />} />
+          <Route path="/reports" element={<Reports />} />
           {/* Thêm các route khác ở đây */}
         </Route>
 
