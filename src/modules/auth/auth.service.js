@@ -1,7 +1,7 @@
 // src/modules/auth/auth.service.js
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const crypto = require('crypto');
+const crypto = require("crypto");
 const prisma = require("../../config/prisma");
 
 // Ghi chú: Phần refresh token + logout
@@ -59,10 +59,12 @@ const login = async ({ email, password }) => {
 
   // 6. Tạo refresh token và lưu vào database
   const createRefreshToken = async (userId) => {
-    const tokenStr = crypto.randomBytes(48).toString('hex');
+    const tokenStr = crypto.randomBytes(48).toString("hex");
     const days = Number(process.env.REFRESH_TOKEN_EXPIRES_DAYS) || 30;
     const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-    await prisma.refreshToken.create({ data: { token: tokenStr, userId, expiresAt } });
+    await prisma.refreshToken.create({
+      data: { token: tokenStr, userId, expiresAt },
+    });
     return tokenStr;
   };
 
@@ -139,45 +141,75 @@ const changePassword = async (userId, { currentPassword, newPassword }) => {
 
 // Tạo access token từ user object (tách để tái sử dụng)
 const createAccessToken = (user) => {
-  return jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  });
+  return jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+    },
+  );
 };
 
 // Dùng khi client gửi refresh token để lấy access token mới
 const refreshAccessToken = async (providedToken) => {
-  if (!providedToken) throw { status: 401, message: 'Thiếu refresh token' };
+  if (!providedToken) throw { status: 401, message: "Thiếu refresh token" };
 
-  const stored = await prisma.refreshToken.findUnique({ where: { token: providedToken } });
-  if (!stored || stored.isRevoked) throw { status: 401, message: 'Refresh token không hợp lệ' };
-  if (new Date(stored.expiresAt) < new Date()) throw { status: 401, message: 'Refresh token đã hết hạn' };
+  const stored = await prisma.refreshToken.findUnique({
+    where: { token: providedToken },
+  });
+  if (!stored || stored.isRevoked)
+    throw { status: 401, message: "Refresh token không hợp lệ" };
+  if (new Date(stored.expiresAt) < new Date())
+    throw { status: 401, message: "Refresh token đã hết hạn" };
 
   const user = await prisma.user.findUnique({ where: { id: stored.userId } });
-  if (!user || !user.isActive) throw { status: 401, message: 'Tài khoản không hợp lệ' };
+  if (!user || !user.isActive)
+    throw { status: 401, message: "Tài khoản không hợp lệ" };
 
   // Revoke old token and create a new one (rotation)
-  await prisma.refreshToken.update({ where: { id: stored.id }, data: { isRevoked: true } });
-  const newRefresh = crypto.randomBytes(48).toString('hex');
+  await prisma.refreshToken.update({
+    where: { id: stored.id },
+    data: { isRevoked: true },
+  });
+  const newRefresh = crypto.randomBytes(48).toString("hex");
   const days = Number(process.env.REFRESH_TOKEN_EXPIRES_DAYS) || 30;
   const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-  await prisma.refreshToken.create({ data: { token: newRefresh, userId: user.id, expiresAt } });
+  await prisma.refreshToken.create({
+    data: { token: newRefresh, userId: user.id, expiresAt },
+  });
 
   const newAccess = createAccessToken(user);
   const { password: _p, ...userWithoutPassword } = user;
-  return { token: newAccess, refreshToken: newRefresh, user: userWithoutPassword };
+  return {
+    token: newAccess,
+    refreshToken: newRefresh,
+    user: userWithoutPassword,
+  };
 };
 
 // Revoke a refresh token or revoke all tokens for a user
 const revokeRefreshToken = async ({ token, userId, revokeAll = false }) => {
   if (revokeAll && userId) {
-    await prisma.refreshToken.updateMany({ where: { userId }, data: { isRevoked: true } });
+    await prisma.refreshToken.updateMany({
+      where: { userId },
+      data: { isRevoked: true },
+    });
     return;
   }
   if (token) {
-    await prisma.refreshToken.updateMany({ where: { token }, data: { isRevoked: true } });
+    await prisma.refreshToken.updateMany({
+      where: { token },
+      data: { isRevoked: true },
+    });
     return;
   }
-  throw { status: 400, message: 'Yêu cầu token hoặc userId để revoke' };
+  throw { status: 400, message: "Yêu cầu token hoặc userId để revoke" };
 };
 
-module.exports = { login, getProfile, changePassword, refreshAccessToken, revokeRefreshToken };
+module.exports = {
+  login,
+  getProfile,
+  changePassword,
+  refreshAccessToken,
+  revokeRefreshToken,
+};

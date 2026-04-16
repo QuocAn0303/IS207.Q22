@@ -21,6 +21,7 @@ const customerRoutes = require("./modules/customers/customer.routes");
 const inventoryRoutes = require("./modules/inventory/inventory.routes");
 const categoryRoutes = require("./modules/categories/category.routes");
 const reportRoutes = require("./modules/reports/report.routes");
+const auditRoutes = require("./modules/audit/audit.routes");
 
 const app = express();
 const corsOrigin =
@@ -56,22 +57,21 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/audit", auditRoutes);
 
 // 404 handler
 app.use("*", (req, res) => {
-  res
-    .status(404)
-    .json({
-      success: false,
-      message: `Route ${req.originalUrl} không tồn tại`,
-    });
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} không tồn tại`,
+  });
 });
 
 // Error handler (phải đặt cuối cùng)
 app.use(errorHandler);
 
 // ==================== Start Server ====================
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000; // Tạm đổi mặc định từ 3000 -> 4000 để tránh xung đột cổng khi đang phát triển
 app.listen(PORT, () => {
   console.log(`\n🚀 ERP Server đang chạy tại: http://localhost:${PORT}`);
   console.log(`📚 Environment: ${process.env.NODE_ENV || "development"}`);

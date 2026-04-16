@@ -4,6 +4,10 @@ const { z } = require("zod");
 const reportService = require("./report.service");
 const { authenticate, authorize } = require("../../middleware/auth.middleware");
 const { success } = require("../../utils/response");
+const {
+  exportRevenueExcel,
+  exportInventoryExcel,
+} = require("./report.service");
 
 // Báo cáo là dữ liệu nhạy cảm, chỉ ADMIN và MANAGER mới được xem
 router.use(authenticate, authorize("ADMIN", "MANAGER"));
@@ -60,5 +64,54 @@ router.get("/inventory", async (req, res, next) => {
     next(err);
   }
 });
+
+// Xuất Excel doanh thu: GET /api/reports/revenue/export?from=YYYY-MM-DD&to=YYYY-MM-DD
+router.get(
+  "/revenue/export",
+  authorize("ADMIN", "MANAGER"),
+  async (req, res, next) => {
+    try {
+      const { from, to } = z
+        .object({ from: z.string(), to: z.string() })
+        .parse(req.query);
+      const buf = await exportRevenueExcel(from, to);
+      const filename = `revenue_${from}_${to}.xlsx`;
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${filename}"`,
+      );
+      res.send(buf);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Xuất Excel tồn kho: GET /api/reports/inventory/export
+router.get(
+  "/inventory/export",
+  authorize("ADMIN", "MANAGER"),
+  async (req, res, next) => {
+    try {
+      const buf = await exportInventoryExcel();
+      const filename = `inventory_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${filename}"`,
+      );
+      res.send(buf);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 module.exports = router;

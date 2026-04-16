@@ -173,6 +173,27 @@ const create = async (orderData, userId) => {
     return newOrder;
   });
 
+  // Ghi audit log: ai đã tạo đơn, mã đơn, tổng tiền
+  try {
+    const auditService = require("../audit/audit.service");
+    await auditService.log({
+      userId,
+      action: "CREATE_ORDER",
+      entity: "Order",
+      entityId: order.id,
+      before: null,
+      after: {
+        orderCode: order.orderCode,
+        total: order.total,
+        items: order.items,
+      },
+      meta: { note: `Tạo đơn bởi user ${userId}` },
+    });
+  } catch (err) {
+    // Không block luồng chính nếu audit lỗi
+    console.error("Failed to write audit log for order:", err);
+  }
+
   return order;
 };
 

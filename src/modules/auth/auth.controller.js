@@ -1,13 +1,18 @@
 // src/modules/auth/auth.controller.js
-const authService = require('./auth.service');
-const { success } = require('../../utils/response');
-const { loginSchema, changePasswordSchema, refreshSchema, logoutSchema } = require('./auth.validation');
+const authService = require("./auth.service");
+const { success } = require("../../utils/response");
+const {
+  loginSchema,
+  changePasswordSchema,
+  refreshSchema,
+  logoutSchema,
+} = require("./auth.validation");
 
 const login = async (req, res, next) => {
   try {
     const data = loginSchema.parse(req.body);
     const result = await authService.login(data);
-    success(res, result, 'Đăng nhập thành công');
+    success(res, result, "Đăng nhập thành công");
   } catch (err) {
     next(err);
   }
@@ -36,7 +41,7 @@ const refresh = async (req, res, next) => {
   try {
     const data = refreshSchema.parse(req.body);
     const result = await authService.refreshAccessToken(data.refreshToken);
-    success(res, result, 'Lấy token mới thành công');
+    success(res, result, "Lấy token mới thành công");
   } catch (err) {
     next(err);
   }
@@ -47,11 +52,14 @@ const logout = async (req, res, next) => {
     const data = logoutSchema.parse(req.body);
     // Nếu gửi { all: true } thì revoke all tokens for current user
     if (data.all) {
-      await authService.revokeRefreshToken({ userId: req.user?.id, revokeAll: true });
+      await authService.revokeRefreshToken({
+        userId: req.user?.id,
+        revokeAll: true,
+      });
     } else {
       await authService.revokeRefreshToken({ token: data.refreshToken });
     }
-    success(res, null, 'Đăng xuất thành công');
+    success(res, null, "Đăng xuất thành công");
   } catch (err) {
     next(err);
   }
