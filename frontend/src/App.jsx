@@ -5,6 +5,8 @@ import Dashboard from "./pages/Dashboard";
 import MainLayout from "./components/MainLayout";
 import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
+import Inventory from "./pages/Inventory";
+import Customers from "./pages/Customers";
 
 function App() {
   return (
