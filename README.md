@@ -1,157 +1,147 @@
-# 🏪 ERP System - Bán Lẻ
+# ERP System (Quản lý bán lẻ)
 
-Backend API cho hệ thống ERP bán lẻ, xây dựng với Node.js + Express + PostgreSQL + Prisma.
+Tổng quan ngắn: Hệ thống ERP mẫu cho bán lẻ gồm backend (Node.js + Express + Prisma + PostgreSQL) và frontend (React + Vite + Ant Design). Mục tiêu: quản lý sản phẩm, tồn kho, khách hàng, đơn hàng, báo cáo và ghi nhận hoạt động (audit).
 
-## 🛠️ Tech Stack
+**Kiến trúc & Stack**
 
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: PostgreSQL
-- **ORM**: Prisma
-- **Auth**: JWT + bcrypt
-- **Validation**: Zod
+- Backend: Node.js, Express, Prisma (PostgreSQL), Zod, bcrypt, JWT
+- Frontend: React, Vite, Ant Design, Zustand
+- Storage: Cloudinary (ảnh sản phẩm)
+- Docs: Swagger (mở tại `/api-docs`)
+- Dev tooling: nodemon, prisma, vite
 
-## 📁 Cấu trúc Project
+**Tính năng chính**
+
+- Xác thực: JWT + refresh token, role-based (ADMIN, MANAGER, CASHIER, WAREHOUSE)
+- Quản lý users (tài khoản, role, active)
+- Quản lý sản phẩm & danh mục
+- Quản lý tồn kho: inventory, giao dịch (import/export/adjustment/return)
+- Quản lý khách hàng
+- Quản lý đơn hàng + order items
+- Báo cáo & Dashboard (API hỗ trợ xuất dữ liệu)
+- Audit log: ghi lịch sử thay đổi
+- Upload ảnh lên Cloudinary
+- API docs (Swagger)
+
+**Mô hình dữ liệu (tóm tắt)**
+
+- User, Role enum
+- Product, Category
+- Inventory, InventoryTransaction, TransactionType enum
+- Customer
+- Order, OrderItem, OrderStatus enum, PaymentMethod, PaymentStatus
+- RefreshToken
+- AuditLog
+
+**Các file/điểm quan trọng**
+
+- Server entry: `src/app.js`
+- Prisma schema: `prisma/schema.prisma`
+- Seeder: `prisma/seed.js` (tạo user admin: `admin@erp.com` / `admin123`)
+- API docs config: `src/config/swagger.js` (mở tại `/api-docs`)
+- Cloudinary config: `src/config/cloudinary.config.js`
+- Modules chính: `src/modules/` (auth, users, products, orders, inventory, customers, categories, reports, dashboard, audit)
+- Frontend: `frontend/` (React + Vite)
+
+**Biến môi trường (quan trọng)**
+Tạo file `.env` ở root với tối thiểu các biến sau:
 
 ```
-src/
-├── modules/
-│   ├── auth/          # Đăng nhập, profile, đổi mật khẩu
-│   ├── users/         # Quản lý nhân viên
-│   ├── products/      # Quản lý sản phẩm
-│   ├── orders/        # Quản lý đơn hàng
-│   └── dashboard/     # Báo cáo, thống kê
-|   |__export/         #xuất pdf, excel?
-|
-├── middleware/
-│   ├── auth.middleware.js   # Xác thực JWT + phân quyền
-│   └── error.middleware.js  # Xử lý lỗi tập trung
-├── utils/
-│   └── response.js    # Helper format response
-├── config/
-│   └── prisma.js      # Prisma client
-└── app.js             # Entry point
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+PORT=4000
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=7d
+REFRESH_TOKEN_EXPIRES_DAYS=30
+BCRYPT_ROUNDS=10
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+SWAGGER_SERVER_URL=http://localhost:4000
+CLIENT_URL=http://localhost:5173
+LOG_LEVEL=info
+RATE_LIMIT_WINDOW_MINUTES=15
+RATE_LIMIT_MAX=10
 ```
 
-## 🚀 Cài đặt và chạy
+Ghi chú: code dùng `process.env` ở nhiều nơi; kiểm tra `src/config` và `src/modules` nếu cần thêm biến.
 
-### 1. Cài đặt PostgreSQL
+**Chạy nhanh (local)**
+
+1. Cài đặt Docker (tuỳ chọn) và chạy PostgreSQL bằng `docker-compose`:
 
 ```bash
-# Với Docker (khuyến nghị)
-docker run --name erp-postgres \
-  -e POSTGRES_PASSWORD=uit\
-  -e POSTGRES_DB=erp_db \
-  -p 5432:5432 \
-  -d postgres:15
+docker-compose up -d
 ```
 
-### 2. Clone và cài dependencies
+2. Cài đặt deps (backend):
 
 ```bash
-cd erp-system
 npm install
 ```
 
-### 3. Cấu hình môi trường
+3. Migrate & seed (Prisma):
 
 ```bash
-cp .env.example .env
-# Mở .env và sửa DATABASE_URL, JWT_SECRET
-```
-
-### 4. Khởi tạo database
-
-```bash
-npx prisma migrate dev --name init
+npm run db:migrate
 npm run db:seed
+# (mở Prisma Studio nếu cần)
+npm run db:studio
 ```
 
-### 5. Chạy server
+4. Chạy backend (phát triển):
 
 ```bash
 npm run dev
 ```
 
-Server chạy tại: `http://localhost:3000`
+Server mặc định lắng nghe `PORT` (nếu không đặt sẽ dùng `4000`). Swagger UI: `http://localhost:4000/api-docs`
 
-- Swagger API docs: `http://localhost:3000/api-docs`
-
-## 📋 API Endpoints
-
-### Auth
-
-| Method | Endpoint                  | Mô tả         | Auth |
-| ------ | ------------------------- | ------------- | ---- |
-| POST   | /api/auth/login           | Đăng nhập     | ❌   |
-| GET    | /api/auth/me              | Thông tin tôi | ✅   |
-| PUT    | /api/auth/change-password | Đổi mật khẩu  | ✅   |
-
-### Users (ADMIN only)
-
-| Method | Endpoint                           | Mô tả         |
-| ------ | ---------------------------------- | ------------- |
-| GET    | /api/users?page=1&limit=10&search= | Danh sách     |
-| POST   | /api/users                         | Tạo tài khoản |
-| PUT    | /api/users/:id                     | Cập nhật      |
-| DELETE | /api/users/:id                     | Vô hiệu hóa   |
-
-### Products
-
-| Method | Endpoint                          | Mô tả                        |
-| ------ | --------------------------------- | ---------------------------- |
-| GET    | /api/products?search=&categoryId= | Danh sách                    |
-| GET    | /api/products/:id                 | Chi tiết                     |
-| POST   | /api/products                     | Tạo sản phẩm (ADMIN/MANAGER) |
-| PUT    | /api/products/:id                 | Cập nhật (ADMIN/MANAGER)     |
-| DELETE | /api/products/:id                 | Xóa (ADMIN)                  |
-
-### Orders
-
-| Method | Endpoint                  | Mô tả               |
-| ------ | ------------------------- | ------------------- |
-| GET    | /api/orders?status=&page= | Danh sách           |
-| GET    | /api/orders/:id           | Chi tiết            |
-| POST   | /api/orders               | Tạo đơn hàng        |
-| PATCH  | /api/orders/:id/status    | Cập nhật trạng thái |
-
-### Dashboard
-
-| Method | Endpoint                | Mô tả            |
-| ------ | ----------------------- | ---------------- |
-| GET    | /api/dashboard/overview | Tổng quan        |
-| GET    | /api/dashboard/revenue  | Doanh thu 7 ngày |
-
-## 🔐 Phân quyền
-
-| Role      | Quyền                            |
-| --------- | -------------------------------- |
-| ADMIN     | Toàn quyền                       |
-| MANAGER   | Xem + tạo/sửa sản phẩm, đơn hàng |
-| CASHIER   | Xem + tạo đơn hàng               |
-| WAREHOUSE | Xem sản phẩm, kho                |
-
-## 💡 Test nhanh với curl
+5. Chạy frontend (terminal khác):
 
 ```bash
-# 1. Login
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@erp.com","password":"admin123"}'
-
-# 2. Lấy token từ response, rồi test API:
-TOKEN="your_token_here"
-
-# 3. Lấy danh sách sản phẩm
-curl http://localhost:3000/api/products \
-  -H "Authorization: Bearer $TOKEN"
+cd frontend
+npm install
+npm run dev
 ```
 
-## 🗺️ Roadmap tiếp theo
+Frontend mặc định: `http://localhost:5173` (vite).
 
-- [ ] Module Khách hàng (CRM)
-- [ ] Module Kho (nhập hàng, kiểm kho)
-- [ ] Module Danh mục
-- [ ] Báo cáo nâng cao (PDF export)
-- [ ] Frontend React + Ant Design
-- [ ] Unit tests
+**Docker / Database**
+
+- `docker-compose.yml` cung cấp service `postgres` (image: `postgres:15`).
+- Hoặc cấu hình PostgreSQL riêng và set `DATABASE_URL` tương ứng.
+
+**Seeder & Test account**
+
+- Seeder tạo admin: `admin@erp.com` / `admin123` (xem `prisma/seed.js`).
+
+**API / Endpoints cơ bản**
+
+- `/api/auth` — login, refresh, logout
+- `/api/users` — user CRUD
+- `/api/products` — danh sách, chi tiết, tạo, cập nhật
+- `/api/orders` — tạo đơn, danh sách
+- `/api/inventory` — import/export, transactions
+- `/api/customers` — quản lý khách hàng
+- `/api/reports` — xuất báo cáo
+- `/api/dashboard` — thông tin tổng quan
+
+**Testing**
+
+- Một vài file test có trong `src/modules/*/*.test.js` (ví dụ `inventory.service.test.js`, `product.service.test.js`) nhưng script `test` trong `package.json` chưa cấu hình để chạy test framework. Nếu muốn chạy tests, thêm dev-dependency (ví dụ `jest`) và cập nhật script `test`.
+
+**Chú ý & Gợi ý**
+
+- Kiểm tra và bảo mật `JWT_SECRET` và các khóa Cloudinary trước khi deploy.
+- Cổng mặc định server trong code là `4000` (app.js) — tuỳ file `HOW_TO_TEST.md` có nhắc `3000` (cần đồng bộ nếu thay đổi).
+- Nếu thay đổi schema Prisma, chạy `prisma migrate` và kiểm tra migrations trong `prisma/migrations`.
+
+Nếu bạn muốn, tôi có thể:
+
+- Thêm phần hướng dẫn triển khai (Heroku, DigitalOcean, Docker) vào README
+- Tạo `.env.example` tóm tắt các biến môi trường
+- Cấu hình test script và CI cơ bản
+
+---
+
+_Tài liệu được tự động tạo tóm tắt từ mã nguồn hiện có. Nếu bạn muốn nội dung chi tiết hơn (API reference từng endpoint, ví dụ request/response), cho tôi biết module nào cần mở rộng._

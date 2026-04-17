@@ -1,33 +1,42 @@
 import { create } from 'zustand';
 
+const initialToken = localStorage.getItem('token') || null;
+const initialRefresh = localStorage.getItem('refreshToken') || null;
+
 const useAuthStore = create((set) => ({
     // Trạng thái ban đầu
     user: null,
-    token: localStorage.getItem('token') || null,
-    isAuthenticated: !!localStorage.getItem('token'),
+    token: initialToken,
+    refreshToken: initialRefresh,
+    isAuthenticated: !!initialToken,
 
-    // Hành động: Đăng nhập thành công
-    login: (userData, token) => {
-        localStorage.setItem('token', token); // Lưu vào trình duyệt để không bị mất khi F5
-        set({
-            user: userData,
-            token: token,
-            isAuthenticated: true,
-        });
+    // Đăng nhập: lưu token + refreshToken
+    login: (userData, token, refreshToken) => {
+        if (token) localStorage.setItem('token', token);
+        if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+        set({ user: userData, token, refreshToken, isAuthenticated: true });
     },
 
-    // Hành động: Đăng xuất
+    // Đăng xuất (chỉ client-side cleanup)
     logout: () => {
-        localStorage.removeItem('token'); // Xóa token
-        set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-        });
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
     },
 
-    // Hành động: Cập nhật thông tin user (ví dụ sau khi gọi /api/auth/me)
+    // Cập nhật thông tin user
     setUser: (userData) => set({ user: userData }),
+
+    // Thiết lập token (hữu ích khi refresh)
+    setToken: (token) => {
+        if (token) localStorage.setItem('token', token);
+        set({ token, isAuthenticated: !!token });
+    },
+
+    setRefreshToken: (refreshToken) => {
+        if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+        set({ refreshToken });
+    },
 }));
 
 export default useAuthStore;

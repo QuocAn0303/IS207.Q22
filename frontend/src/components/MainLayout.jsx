@@ -11,6 +11,7 @@ import {
 } from "@ant-design/icons";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import useAuthStore from "../stores/authStore";
+import axiosInstance from "../api/axios";
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -24,7 +25,17 @@ const MainLayout = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (refreshToken) {
+        await axiosInstance.post("/auth/logout", { refreshToken });
+      } else {
+        await axiosInstance.post("/auth/logout", { all: true });
+      }
+    } catch (err) {
+      console.debug("Logout API error (ignored):", err?.response?.data || err?.message);
+    }
     logout();
     navigate("/login");
   };
@@ -100,12 +111,10 @@ const MainLayout = () => {
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <Button
               type="link"
-              onClick={() =>
-                window.open(
-                  `${import.meta.env.VITE_API_URL || ""}/api-docs`,
-                  "_blank",
-                )
-              }
+              onClick={() => {
+                const base = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "").replace(/\/api$/, "");
+                window.open(`${base}/api-docs`, "_blank");
+              }}
             >
               API Docs
             </Button>

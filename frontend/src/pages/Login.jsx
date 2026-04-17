@@ -18,10 +18,10 @@ const Login = () => {
       // Gọi API POST /api/auth/login theo đúng tài liệu 
       const response = await axiosInstance.post('/auth/login', values);
 
-      const { user, token } = response.data.data;
+      const { user, token, refreshToken } = response.data.data;
 
-      // Lưu vào Zustand store 
-      loginStore(user, token);
+      // Lưu vào Zustand store (bao gồm refresh token)
+      loginStore(user, token, refreshToken);
 
       message.success('Đăng nhập thành công!');
 
