@@ -5,6 +5,8 @@ import Dashboard from "./pages/Dashboard";
 import MainLayout from "./components/MainLayout";
 import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
+import Inventory from "./pages/Inventory";
+import Customers from "./pages/Customers";
 
 function App() {
   return (
@@ -24,10 +26,8 @@ function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/audit" element={<Audit />} />
           <Route path="/products" element={<div>Trang Sản phẩm</div>} />
-          <Route path="/inventory" element={<div>Trang Kho</div>} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/customers" element={<Customers />} />
-          <Route path="/reports" element={<Reports />} />
           {/* Thêm các route khác ở đây */}
         </Route>
 

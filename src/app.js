@@ -71,20 +71,45 @@ app.use("*", (req, res) => {
 app.use(errorHandler);
 
 // ==================== Start Server ====================
-const PORT = process.env.PORT || 4000; // Tạm đổi mặc định từ 3000 -> 4000 để tránh xung đột cổng khi đang phát triển
-app.listen(PORT, () => {
-  console.log(`\n🚀 ERP Server đang chạy tại: http://localhost:${PORT}`);
-  console.log(`📚 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log("\n📋 API Endpoints:");
-  console.log(`  POST   /api/auth/login`);
-  console.log(`  GET    /api/auth/me`);
-  console.log(`  GET    /api/products`);
-  console.log(`  POST   /api/orders`);
-  console.log(`  GET    /api/dashboard/overview`);
-  console.log(`  POST   /api/inventory/import`);
-  console.log(`  GET    /api/inventory/transactions`);
-  console.log(`  GET    /api/customers`);
-  console.log(`  GET    /api-docs`);
-});
+// Khởi động server có xử lý lỗi EADDRINUSE: nếu cổng bị chiếm sẽ thử cổng tiếp theo
+const DEFAULT_PORT = Number(process.env.PORT) || 4000; // fallback
+
+const startServer = (port, retries = 10) => {
+  const p = Number(port);
+  const server = app.listen(p, () => {
+    console.log(`\n🚀 ERP Server đang chạy tại: http://localhost:${p}`);
+    console.log(`📚 Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log("\n📋 API Endpoints:");
+    console.log(`  POST   /api/auth/login`);
+    console.log(`  GET    /api/auth/me`);
+    console.log(`  GET    /api/products`);
+    console.log(`  POST   /api/orders`);
+    console.log(`  GET    /api/dashboard/overview`);
+    console.log(`  POST   /api/inventory/import`);
+    console.log(`  GET    /api/inventory/transactions`);
+    console.log(`  GET    /api/customers`);
+    console.log(`  GET    /api-docs`);
+  });
+
+  server.on("error", (err) => {
+    if (err && err.code === "EADDRINUSE") {
+      console.warn(`Port ${p} is already in use.`);
+      if (retries > 0) {
+        console.log(`Trying port ${p + 1}... (${retries - 1} retries left)`);
+        startServer(p + 1, retries - 1);
+      } else {
+        console.error(
+          "No available ports found. Please free the port or set PORT in .env.",
+        );
+        process.exit(1);
+      }
+    } else {
+      console.error("Server error:", err);
+      process.exit(1);
+    }
+  });
+};
+
+startServer(DEFAULT_PORT);
 
 module.exports = app;

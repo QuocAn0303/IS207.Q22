@@ -34,7 +34,10 @@ const MainLayout = () => {
         await axiosInstance.post("/auth/logout", { all: true });
       }
     } catch (err) {
-      console.debug("Logout API error (ignored):", err?.response?.data || err?.message);
+      console.debug(
+        "Logout API error (ignored):",
+        err?.response?.data || err?.message,
+      );
     }
     logout();
     navigate("/login");
@@ -112,7 +115,9 @@ const MainLayout = () => {
             <Button
               type="link"
               onClick={() => {
-                const base = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "").replace(/\/api$/, "");
+                const base = (import.meta.env.VITE_API_URL || "")
+                  .replace(/\/$/, "")
+                  .replace(/\/api$/, "");
                 window.open(`${base}/api-docs`, "_blank");
               }}
             >
