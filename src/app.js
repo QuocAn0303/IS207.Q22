@@ -8,6 +8,8 @@ const hpp = require("hpp");
 const xssClean = require("xss-clean");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
+const fs = require("fs");
+const path = require("path");
 
 const errorHandler = require("./middleware/error.middleware");
 
@@ -74,6 +76,33 @@ app.use(errorHandler);
 // Khởi động server có xử lý lỗi EADDRINUSE: nếu cổng bị chiếm sẽ thử cổng tiếp theo
 const DEFAULT_PORT = Number(process.env.PORT) || 4000; // fallback
 
+// Ghi `VITE_API_URL` vào frontend/.env để frontend dev server biết backend đang chạy ở cổng nào.
+const updateFrontendEnv = (port) => {
+  try {
+    const frontendEnvPath = path.join(__dirname, "..", "frontend", ".env");
+    const line = `VITE_API_URL=http://localhost:${port}/api`;
+
+    let content = "";
+    if (fs.existsSync(frontendEnvPath)) {
+      content = fs.readFileSync(frontendEnvPath, "utf8");
+      if (/^VITE_API_URL=.*$/m.test(content)) {
+        content = content.replace(/^VITE_API_URL=.*$/m, line);
+      } else {
+        if (content.length && !content.endsWith("\n")) content += "\n";
+        content += line + "\n";
+      }
+    } else {
+      // tạo file nếu chưa có
+      content = line + "\n";
+    }
+
+    fs.writeFileSync(frontendEnvPath, content, "utf8");
+    console.log(`Updated frontend .env -> ${line}`);
+  } catch (e) {
+    console.warn("Unable to update frontend .env:", e.message);
+  }
+};
+
 const startServer = (port, retries = 10) => {
   const p = Number(port);
   const server = app.listen(p, () => {
@@ -89,6 +118,12 @@ const startServer = (port, retries = 10) => {
     console.log(`  GET    /api/inventory/transactions`);
     console.log(`  GET    /api/customers`);
     console.log(`  GET    /api-docs`);
+    // Cập nhật frontend/.env để frontend dev biết API URL (chỉ cho môi trường dev)
+    try {
+      updateFrontendEnv(p);
+    } catch (e) {
+      // không block server nếu không thể ghi file
+    }
   });
 
   server.on("error", (err) => {

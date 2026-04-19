@@ -109,7 +109,7 @@ const MainLayout = () => {
           }}
         >
           <Title level={4} style={{ margin: 0 }}>
-            Hệ thống quản lý Texas Chicken
+            Hệ thống quản lý doanh nghiệp
           </Title>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <Button
