@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Table, message } from "antd";
+import { Table, message, Button } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
 
 const Products = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetch = async () => {
@@ -44,7 +47,23 @@ const Products = () => {
 
   return (
     <div>
-      <h2>Trang Sản phẩm</h2>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
+        <h2>Trang Sản phẩm</h2>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => navigate("/products/create")}
+        >
+          Thêm sản phẩm
+        </Button>
+      </div>
       <Table
         dataSource={data}
         columns={columns}

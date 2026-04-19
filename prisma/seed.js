@@ -71,6 +71,24 @@ async function main() {
   }
   console.log(`✅ Created ${users.length} users`);
 
+  // ---- EMPLOYEES (linked to seeded users) ----
+  const employees = [];
+  const salaryByRole = { ADMIN: 15000000, MANAGER: 10000000, CASHIER: 7000000 };
+  for (const u of users) {
+    const base = salaryByRole[u.role] || 7000000;
+    const shiftMoney = +(base * 0.05).toFixed(2);
+    const emp = await prisma.employee.create({
+      data: {
+        userId: u.id,
+        baseSalary: base.toFixed(2),
+        shiftMoney: shiftMoney.toFixed(2),
+        isActive: true,
+      },
+    });
+    employees.push(emp);
+  }
+  console.log(`✅ Created ${employees.length} employees`);
+
   // ---- CATEGORIES ----
   const categoryNames = [
     "Nến thơm tinh dầu",

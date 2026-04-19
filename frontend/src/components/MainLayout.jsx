@@ -50,6 +50,7 @@ const MainLayout = () => {
     { key: "/inventory", icon: <DatabaseOutlined />, label: "Kho hàng" },
     { key: "/reports", icon: <FileTextOutlined />, label: "Báo cáo" },
     { key: "/pos", icon: <ShoppingCartOutlined />, label: "Bán hàng (POS)" },
+    { key: "/hr", icon: <UserOutlined />, label: "Nhân sự" },
     { key: "/orders", icon: <FileTextOutlined />, label: "Đơn hàng" },
     { key: "/customers", icon: <UserOutlined />, label: "Khách hàng" },
   ];

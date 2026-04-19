@@ -31,6 +31,7 @@ model User {
   inventoryTransactions InventoryTransaction[]
   refreshTokens         RefreshToken[]
   auditLogs             AuditLog[]
+  employee              Employee?
 
   @@map("users")
 }
@@ -219,4 +220,80 @@ model AuditLog {
   user User? @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
+}
+
+// ==================== HR / PAYROLL ====================
+
+enum ShiftType {
+  MORNING
+  AFTERNOON
+  NIGHT
+}
+
+enum ViolationType {
+  LATE
+  EARLY
+  PACKING_ERROR
+  DAMAGED_GOODS
+  UNAUTHORIZED_ABSENCE
+}
+
+model Employee {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id])
+  baseSalary Decimal  @db.Decimal(12,2) @default(5000000)
+  shiftMoney Decimal  @db.Decimal(12,2) @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  shifts     Shift[]
+  violations Violation[]
+  payrolls   Payroll[]
+
+  @@map("employees")
+}
+
+model Shift {
+  id         String    @id @default(uuid())
+  date       DateTime
+  type       ShiftType
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  createdAt  DateTime  @default(now())
+
+  @@map("shifts")
+}
+
+model Violation {
+  id         String        @id @default(uuid())
+  type       ViolationType
+  note       String?
+  penalty    Decimal?      @db.Decimal(12,2) @default(0)
+  date       DateTime      @default(now())
+  employeeId String
+  employee   Employee      @relation(fields: [employeeId], references: [id])
+  createdAt  DateTime      @default(now())
+
+  @@map("violations")
+}
+
+model Payroll {
+  id                  String   @id @default(uuid())
+  employeeId          String
+  employee            Employee @relation(fields: [employeeId], references: [id])
+  month               Int
+  year                Int
+  baseSalary          Decimal  @db.Decimal(12,2)
+  shiftMoney          Decimal  @db.Decimal(12,2) @default(0)
+  shiftCount          Int
+  attendanceCoefficient Float
+  penalties           Decimal  @db.Decimal(12,2)
+  finalSalary         Decimal  @db.Decimal(12,2)
+  isLocked            Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("payrolls")
 }

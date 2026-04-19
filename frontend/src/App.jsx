@@ -10,6 +10,9 @@ import Customers from "./pages/Customers";
 import Products from "./pages/Products";
 import Orders from "./pages/Orders";
 import Pos from "./pages/Pos";
+import ProductEdit from "./pages/ProductEdit";
+import Analytics from "./pages/Analytics";
+import HR from "./pages/HR";
 
 function App() {
   return (
@@ -29,9 +32,13 @@ function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/audit" element={<Audit />} />
           <Route path="/products" element={<Products />} />
+          <Route path="/products/create" element={<ProductEdit />} />
+          <Route path="/products/:id/edit" element={<ProductEdit />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/pos" element={<Pos />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/hr" element={<HR />} />
           <Route path="/customers" element={<Customers />} />
           {/* Thêm các route khác ở đây */}
         </Route>

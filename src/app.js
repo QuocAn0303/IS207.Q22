@@ -24,6 +24,8 @@ const inventoryRoutes = require("./modules/inventory/inventory.routes");
 const categoryRoutes = require("./modules/categories/category.routes");
 const reportRoutes = require("./modules/reports/report.routes");
 const auditRoutes = require("./modules/audit/audit.routes");
+const hrRoutes = require("./modules/hr/hr.routes");
+const analyticsRoutes = require("./modules/analytics/analytics.routes");
 
 const app = express();
 const corsOrigin =
@@ -60,6 +62,8 @@ app.use("/api/inventory", inventoryRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/hr", hrRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // 404 handler
 app.use("*", (req, res) => {
@@ -117,6 +121,9 @@ const startServer = (port, retries = 10) => {
     console.log(`  POST   /api/inventory/import`);
     console.log(`  GET    /api/inventory/transactions`);
     console.log(`  GET    /api/customers`);
+    console.log(`  GET    /api/hr/employees`);
+    console.log(`  POST   /api/hr/payrolls/generate`);
+    console.log(`  GET    /api/analytics/sales-insights`);
     console.log(`  GET    /api-docs`);
     // Cập nhật frontend/.env để frontend dev biết API URL (chỉ cho môi trường dev)
     try {
