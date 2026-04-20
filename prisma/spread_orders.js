@@ -25,10 +25,14 @@ const daysAgoDate = (days) => {
 
     let updated = 0;
     for (const ord of orders) {
-      // decide whether to mark completed
+      // randomly assign statuses
       const r = Math.random();
-      const makeCompleted = r < 0.8; // 80% become completed
-      if (!makeCompleted) continue;
+      let newStatus = "COMPLETED";
+      if (r < 0.15) newStatus = "PENDING";
+      else if (r < 0.3) newStatus = "CONFIRMED";
+      else if (r < 0.45) newStatus = "SHIPPING";
+      else if (r < 0.55) newStatus = "CANCELLED";
+      else newStatus = "COMPLETED";
 
       // bias createdAt distribution: 50% last 7 days, 30% 8-30 days, 20% 31-60 days
       const rr = Math.random();
@@ -42,7 +46,7 @@ const daysAgoDate = (days) => {
       await prisma.order.update({
         where: { id: ord.id },
         data: {
-          status: "COMPLETED",
+          status: newStatus,
           createdAt: newDate,
           updatedAt: new Date(),
         },
@@ -51,7 +55,7 @@ const daysAgoDate = (days) => {
     }
 
     console.log(
-      `Updated ${updated} orders to COMPLETED with distributed createdAt`,
+      `Updated ${updated} orders with mixed statuses and distributed createdAt`,
     );
   } catch (e) {
     console.error(e);

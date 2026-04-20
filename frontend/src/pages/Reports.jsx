@@ -57,7 +57,7 @@ export default function Reports() {
 
   return (
     <div style={{ padding: 24 }}>
-      <h2>📥 Báo cáo</h2>
+      <h2>Báo cáo</h2>
 
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -79,7 +79,7 @@ export default function Reports() {
         </div>
       </Card>
 
-      <div style={{ color: "#666", fontSize: 13 }}>
+      <div style={{ color: "#f80101ff", fontSize: 13 }}>
         Ghi chú: Nếu không chọn khoảng thời gian, API sẽ dùng mặc định (ví dụ:
         tháng hiện tại).
       </div>

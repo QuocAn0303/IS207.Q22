@@ -10,8 +10,37 @@ router.patch(
   authorize("ADMIN", "MANAGER"),
   controller.updateEmployee,
 );
-router.post("/shifts", authenticate, controller.createShift);
-router.post("/violations", authenticate, controller.createViolation);
+router.post(
+  "/shifts",
+  authenticate,
+  authorize("ADMIN"),
+  controller.createShift,
+);
+router.post(
+  "/violations",
+  authenticate,
+  authorize("ADMIN"),
+  controller.createViolation,
+);
+router.patch(
+  "/violations/:id",
+  authenticate,
+  authorize("ADMIN"),
+  controller.updateViolation,
+);
+// Admin-only: set counts (shifts / violations) for a given employee and month
+router.patch(
+  "/employees/:id/counts",
+  authenticate,
+  authorize("ADMIN"),
+  controller.setEmployeeCounts,
+);
+router.patch(
+  "/employees/bulk/counts",
+  authenticate,
+  authorize("ADMIN"),
+  controller.setBulkCounts,
+);
 router.post("/payrolls/generate", authenticate, controller.generatePayroll);
 
 module.exports = router;

@@ -13,6 +13,7 @@ import Pos from "./pages/Pos";
 import ProductEdit from "./pages/ProductEdit";
 import Analytics from "./pages/Analytics";
 import HR from "./pages/HR";
+import Users from "./pages/Users";
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/hr" element={<HR />} />
           <Route path="/customers" element={<Customers />} />
+          <Route path="/users" element={<Users />} />
           {/* Thêm các route khác ở đây */}
         </Route>
 

@@ -25,6 +25,20 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
   await prisma.customer.deleteMany();
+
+  // HR related tables: delete payrolls, violations, shifts, employees before users
+  try {
+    await prisma.payroll.deleteMany();
+  } catch (e) {}
+  try {
+    await prisma.violation.deleteMany();
+  } catch (e) {}
+  try {
+    await prisma.shift.deleteMany();
+  } catch (e) {}
+  try {
+    await prisma.employee.deleteMany();
+  } catch (e) {}
   // tokens / audit may exist in the project
   try {
     await prisma.refreshToken.deleteMany();
@@ -58,6 +72,36 @@ async function main() {
       email: "cashier@candory.com",
       fullName: "Thu ngân CANDORY",
       role: "CASHIER",
+      isActive: true,
+    },
+    {
+      email: "quocan@gmail.com",
+      fullName: "Quốc An",
+      role: "MANAGER",
+      isActive: true,
+    },
+    {
+      email: "phatlun@gmail.com",
+      fullName: "Phát lùn",
+      role: "CASHIER",
+      isActive: true,
+    },
+    {
+      email: "tanphat@gmail.com",
+      fullName: "Tấn Phát",
+      role: "WAREHOUSE",
+      isActive: true,
+    },
+    {
+      email: "minhtri@gmail.com",
+      fullName: "Minh Trí",
+      role: "WAREHOUSE",
+      isActive: true,
+    },
+    {
+      email: "hieunhan@gmail.com",
+      fullName: "Hiếu Nhân",
+      role: "WAREHOUSE",
       isActive: true,
     },
   ];
@@ -142,8 +186,11 @@ async function main() {
     const size = pick(["120g", "180g", "250g", "350g", "480g"]);
     const name = `${type} ${scent} ${size}`;
     const sku = `CAND-${faker.string.uuid().split("-")[0].toUpperCase()}`;
-    const price = rndInt(50000, 350000); // VND
-    const costPrice = Math.round(price * (0.45 + Math.random() * 0.35));
+    // Generate price as a multiple of 1000 (VND) to avoid odd tens/hundreds
+    const price = rndInt(50, 350) * 1000; // VND (50k - 350k stepped by 1k)
+    // costPrice as ~45-80% of price, rounded to nearest 1000
+    const rawCost = price * (0.45 + Math.random() * 0.35);
+    const costPrice = Math.round(rawCost / 1000) * 1000;
     const qty = rndInt(50, 200);
     const category = pick(categories);
 
