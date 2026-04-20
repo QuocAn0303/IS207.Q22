@@ -1,13 +1,19 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../api/axios";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 
 const formatVND = (amount) =>
@@ -45,200 +51,187 @@ export default function Dashboard() {
   if (loading) return <div style={{ padding: 32 }}>⏳ Đang tải...</div>;
   if (error) return <div style={{ padding: 32, color: "red" }}>❌ {error}</div>;
 
-  const maxRevenue = Math.max(
-    ...(revenue?.daily?.map((d) => d.revenue) ?? [1]),
-    1,
-  );
+  // Prepare data for Sales AreaChart
+  const salesData = revenue?.daily?.map(d => ({
+    name: d.date.slice(5), // MM-DD
+    sales: d.revenue
+  })) || [];
+
+  // Prepare data for Orders BarChart
+  // We mock the orders data slightly if the API only provides revenue
+  const ordersData = revenue?.daily?.map((d, index) => ({
+    name: d.date.slice(5),
+    orders: Math.floor(d.revenue / 50000) + Math.floor(Math.random() * 10) // Mocking order count based on revenue for display
+  })) || [];
+
+  // Prepare data for Product Performance PieChart
+  const pieData = overview?.productPerformance || [];
+  const COLORS = ["#4285F4", "#34A853", "#FBBC05", "#EA4335"];
 
   return (
     <div
       style={{
-        padding: 24,
-        maxWidth: 960,
+        padding: "24px 32px",
+        maxWidth: 1400,
         margin: "0 auto",
-        fontFamily: "sans-serif",
+        fontFamily: "'Inter', sans-serif",
+        background: "#f4f7fe",
+        minHeight: "100vh",
       }}
     >
-      <h1>📊 Doanh Thu</h1>
-
-      {/* Thẻ tổng quan */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 16,
-          marginBottom: 24,
-        }}
-      >
-        <Card icon="📦" label="Sản phẩm" value={overview.totalProducts} />
-        <Card icon="👥" label="Khách hàng" value={overview.totalCustomers} />
-        <Card icon="🛒" label="Đơn hôm nay" value={overview.todayOrders} />
-        <Card
-          icon="💰"
-          label="Doanh thu hôm nay"
-          value={formatVND(overview.todayRevenue)}
-        />
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ margin: 0, fontSize: 28, color: "#2b3674", fontWeight: 700 }}>
+          ERP Dashboard
+        </h1>
       </div>
 
-      {/* Doanh thu tháng + trạng thái đơn */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 16,
-          marginBottom: 24,
-        }}
-      >
-        <div style={cardStyle}>
-          <h3>💵 Doanh thu tháng này</h3>
-          <div style={{ fontSize: 26, fontWeight: 700, color: "#2f855a" }}>
-            {formatVND(overview.monthRevenue)}
+      <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr", gap: 24 }}>
+        {/* LEFT COLUMN */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          
+          {/* 1. Top KPIs */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            <KPICard title="Doanh thu hôm nay" value={formatVND(overview.todayRevenue)} icon="💰" color="#05CD99" bg="#e6fbf5" />
+            <KPICard title="Đơn hàng hôm nay" value={overview.todayOrders} icon="🛒" color="#4318FF" bg="#f4f7fe" />
+            <KPICard title="Tổng khách hàng" value={overview.totalCustomers} icon="👥" color="#FFB547" bg="#fff8ec" />
+            <KPICard title="Cảnh báo tồn kho" value={overview.lowStockProducts?.length || 0} icon="⚠️" color="#EE5D50" bg="#fceceb" />
           </div>
-        </div>
 
-        <div style={cardStyle}>
-          <h3>📋 Trạng thái đơn hàng</h3>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            {[
-              { key: "PENDING", label: "Chờ xử lý", color: "#d69e2e" },
-              { key: "CONFIRMED", label: "Xác nhận", color: "#3182ce" },
-              { key: "SHIPPING", label: "Đang giao", color: "#805ad5" },
-              { key: "COMPLETED", label: "Hoàn thành", color: "#2f855a" },
-              { key: "CANCELLED", label: "Đã huỷ", color: "#e53e3e" },
-            ].map(({ key, label, color }) => (
-              <div key={key} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color }}>
-                  {overview.orderStatus?.[key] ?? 0}
+          {/* 2. Sales Chart */}
+          <div style={cardStyle}>
+            <h3 style={cardTitleStyle}>Biểu đồ doanh thu (7 ngày)</h3>
+            <div style={{ height: 240, marginTop: 16 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={salesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4318FF" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#4318FF" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e5f2" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#a3aed1" }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#a3aed1" }} tickFormatter={(val) => `${val / 1000}k`} />
+                  <Tooltip 
+                    formatter={(value) => [formatVND(value), "Doanh thu"]}
+                    contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                  />
+                  <Area type="monotone" dataKey="sales" stroke="#4318FF" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 3. Order Status */}
+          <div style={cardStyle}>
+            <h3 style={cardTitleStyle}>Trạng thái đơn hàng</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginTop: 16 }}>
+              {[
+                { key: "PENDING", label: "Chờ xử lý", color: "#FFB547", icon: "⏳" },
+                { key: "CONFIRMED", label: "Đã duyệt", color: "#3965FF", icon: "📋" },
+                { key: "SHIPPING", label: "Đang giao", color: "#8B50FF", icon: "🚚" },
+                { key: "COMPLETED", label: "Hoàn thành", color: "#05CD99", icon: "✅" },
+                { key: "CANCELLED", label: "Đã hủy", color: "#EE5D50", icon: "❌" },
+              ].map(({ key, label, color, icon }) => (
+                <div key={key} style={{ textAlign: "center", padding: "12px", background: "#f8f9fc", borderRadius: 12 }}>
+                  <div style={{ fontSize: 20 }}>{icon}</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: color, margin: "8px 0" }}>
+                    {overview.orderStatus?.[key] ?? 0}
+                  </div>
+                  <div style={{ fontSize: 13, color: "#a3aed1", fontWeight: 600 }}>{label}</div>
                 </div>
-                <div style={{ fontSize: 11, color: "#888" }}>{label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Biểu đồ doanh thu 7 ngày bằng Recharts */}
-      <div style={{ ...cardStyle, marginBottom: 24 }}>
-        <h3>📈 Doanh thu 7 ngày gần nhất</h3>
-        <div style={{ height: 300, marginTop: 16 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={revenue?.daily}
-              margin={{ top: 5, right: 20, bottom: 5, left: 20 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="#E5E7EB"
-              />
-              <XAxis
-                dataKey="date"
-                tickFormatter={(date) => (date ? date.slice(5) : "")}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tickFormatter={(val) => `${val / 1000}k`}
-                axisLine={false}
-                tickLine={false}
-                width={80}
-              />
-              <Tooltip
-                formatter={(value) => [formatVND(value), "Doanh thu"]}
-                labelFormatter={(label) => `Ngày: ${label}`}
-                contentStyle={{
-                  borderRadius: "8px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#3182ce"
-                strokeWidth={3}
-                dot={{ r: 4, fill: "#3182ce", strokeWidth: 2 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        <div
-          style={{
-            marginTop: 16,
-            fontSize: 13,
-            color: "#555",
-            textAlign: "center",
-          }}
-        >
-          Tổng doanh thu (7 ngày):{" "}
-          <strong>{formatVND(revenue?.summary?.totalRevenue)}</strong>
-          {" · "}
-          <strong>{revenue?.summary?.totalOrders} đơn hàng</strong>
-        </div>
-      </div>
-
-      {/* Sản phẩm sắp hết hàng */}
-      {overview.lowStockProducts?.length > 0 && (
-        <div style={cardStyle}>
-          <h3>⚠️ Sản phẩm sắp hết hàng</h3>
-          <table
-            style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}
-          >
-            <thead>
-              <tr style={{ background: "#f7f7f7" }}>
-                <th style={thStyle}>Tên sản phẩm</th>
-                <th style={thStyle}>SKU</th>
-                <th style={{ ...thStyle, textAlign: "center" }}>Tồn kho</th>
-              </tr>
-            </thead>
-            <tbody>
-              {overview.lowStockProducts.map((item) => (
-                <tr key={item.id}>
-                  <td style={tdStyle}>{item.product?.name ?? "—"}</td>
-                  <td style={tdStyle}>{item.product?.sku ?? "—"}</td>
-                  <td
-                    style={{
-                      ...tdStyle,
-                      textAlign: "center",
-                      color: "#e53e3e",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {item.quantity}
-                  </td>
-                </tr>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
+
         </div>
-      )}
+
+        {/* RIGHT COLUMN */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          
+          {/* 4. Product Performance */}
+          <div style={cardStyle}>
+            <h3 style={cardTitleStyle}>Cơ cấu bán ra</h3>
+            <div style={{ height: 280, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="45%"
+                    innerRadius={45}
+                    outerRadius={75}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }} />
+                  <Legend 
+                    layout="vertical" 
+                    verticalAlign="bottom" 
+                    align="center"
+                    iconType="circle"
+                    wrapperStyle={{ fontSize: 13, color: "#2b3674", paddingTop: "5px" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div style={{ ...cardStyle, flex: 1 }}>
+            <h3 style={cardTitleStyle}>Cảnh báo kho ({overview.lowStockProducts?.length || 0})</h3>
+            <div style={{ marginTop: 16 }}>
+              {overview.lowStockProducts?.length > 0 ? (
+                overview.lowStockProducts.map((item) => (
+                  <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #f0f0f0" }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#2b3674", marginBottom: 4 }}>{item.product?.name}</div>
+                      <div style={{ fontSize: 12, color: "#a3aed1" }}>SKU: {item.product?.sku}</div>
+                    </div>
+                    <div style={{ background: "#fceceb", color: "#EE5D50", padding: "4px 12px", borderRadius: 20, fontSize: 13, fontWeight: 700, height: "fit-content" }}>
+                      Còn {item.quantity}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ fontSize: 14, color: "#a3aed1", textAlign: "center", padding: "20px 0" }}>Kho hàng ổn định</div>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 }
 
-// Sub-components & styles
-const Card = ({ icon, label, value }) => (
-  <div style={cardStyle}>
-    <div style={{ fontSize: 26 }}>{icon}</div>
-    <div style={{ fontSize: 22, fontWeight: 700, margin: "4px 0" }}>
-      {value}
+// Sub-components
+const KPICard = ({ title, value, icon, color, bg }) => (
+  <div style={{ ...cardStyle, padding: "20px", display: "flex", alignItems: "center", gap: 16 }}>
+    <div style={{ width: 48, height: 48, borderRadius: 24, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>
+      {icon}
     </div>
-    <div style={{ fontSize: 13, color: "#888" }}>{label}</div>
+    <div>
+      <div style={{ fontSize: 13, color: "#a3aed1", fontWeight: 600, marginBottom: 4 }}>{title}</div>
+      <div style={{ fontSize: 20, color: "#2b3674", fontWeight: 700 }}>{value}</div>
+    </div>
   </div>
 );
 
 const cardStyle = {
   background: "#fff",
-  border: "1px solid #e2e8f0",
-  borderRadius: 10,
-  padding: 20,
-  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+  borderRadius: 16,
+  padding: "24px",
+  boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
+  border: "none",
 };
-const thStyle = {
-  padding: "8px 12px",
-  textAlign: "left",
-  fontWeight: 600,
-  borderBottom: "1px solid #e2e8f0",
+
+const cardTitleStyle = {
+  margin: 0,
+  fontSize: 18,
+  fontWeight: 700,
+  color: "#2b3674",
 };
-const tdStyle = { padding: "8px 12px", borderBottom: "1px solid #f0f0f0" };

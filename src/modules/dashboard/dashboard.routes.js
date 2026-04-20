@@ -32,6 +32,8 @@ router.get("/overview", async (req, res, next) => {
       monthRevenue,
       lowStockProducts,
       orderStatusGroups,
+      topProductsGroups,
+      totalQuantityResult,
     ] = await Promise.all([
       prisma.product.count({ where: { isActive: true } }),
       prisma.customer.count({ where: { isActive: true } }),
@@ -62,6 +64,17 @@ router.get("/overview", async (req, res, next) => {
         by: ["status"],
         _count: { _all: true },
       }),
+      // Get top 3 selling products
+      prisma.orderItem.groupBy({
+        by: ["productId"],
+        _sum: { quantity: true },
+        orderBy: { _sum: { quantity: "desc" } },
+        take: 3,
+      }),
+      // Get total quantity of all products sold
+      prisma.orderItem.aggregate({
+        _sum: { quantity: true },
+      }),
     ]);
 
     // build a map of order status counts (ensure all keys exist)
@@ -78,6 +91,33 @@ router.get("/overview", async (req, res, next) => {
       }
     }
 
+    // Process top products
+    const safeTopProductsGroups = topProductsGroups || [];
+    
+    // We need the names of the top 3 products
+    const topProductIds = safeTopProductsGroups.map(g => g.productId);
+    const topProductsInfo = await prisma.product.findMany({
+      where: { id: { in: topProductIds } },
+      select: { id: true, name: true }
+    });
+    const topProductsMap = {};
+    topProductsInfo.forEach(p => topProductsMap[p.id] = p.name);
+
+    const productPerformance = safeTopProductsGroups.map(g => ({
+      name: topProductsMap[g.productId] || "Sản phẩm ẩn",
+      value: g._sum.quantity || 0,
+    }));
+
+    const totalQuantity = totalQuantityResult?._sum?.quantity || 0;
+    const top3Quantity = productPerformance.reduce((sum, item) => sum + item.value, 0);
+    const otherQuantity = totalQuantity - top3Quantity;
+
+    if (otherQuantity > 0) {
+      productPerformance.push({ name: "Khác", value: otherQuantity });
+    } else if (productPerformance.length === 0) {
+      productPerformance.push({ name: "Chưa có dữ liệu", value: 1 });
+    }
+
     success(res, {
       totalProducts,
       totalCustomers,
@@ -86,6 +126,7 @@ router.get("/overview", async (req, res, next) => {
       monthRevenue: Number(monthRevenue._sum.total ?? 0),
       lowStockProducts,
       orderStatus,
+      productPerformance,
     });
   } catch (err) {
     next(err);
