@@ -36,13 +36,20 @@ const getById = async (id) => {
 };
 
 const create = async (data) => {
-  const { initialStock = 0, ...productData } = data;
-  return prisma.product.create({
+  return await prisma.product.create({
     data: {
-      ...productData,
-      inventory: { create: { quantity: initialStock } },
-    },
-    include: { category: true, inventory: true },
+      name: data.name,
+      sku: data.sku,
+      price: data.price,
+      costPrice: data.costPrice,
+      categoryId: data.categoryId,
+      
+      inventory: {
+        create: {
+          quantity: 0
+        }
+      }
+    }
   });
 };
 
@@ -58,4 +65,16 @@ const remove = async (id) => {
   return prisma.product.update({ where: { id }, data: { isActive: false } });
 };
 
-module.exports = { getAll, getById, create, update, remove };
+// Hàm mới: Chỉ dùng để cập nhật mỗi cột imageUrl
+const updateImage = async (id, imageUrl) => {
+  // 1. Kiểm tra xem sản phẩm có tồn tại không trước khi lưu ảnh
+  const product = await prisma.product.findUnique({ where: { id } });
+  if (!product) throw { status: 404, message: 'Không tìm thấy sản phẩm để cập nhật ảnh' };
+
+  return prisma.product.update({
+    where: { id },
+    data: { imageUrl },
+  });
+};
+
+module.exports = { getAll, getById, create, update, remove, updateImage };

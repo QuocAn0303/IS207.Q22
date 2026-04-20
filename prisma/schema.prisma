@@ -27,21 +27,27 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orders    Order[]
+  orders                Order[]
+  inventoryTransactions InventoryTransaction[]
+  refreshTokens         RefreshToken[]
+  auditLogs             AuditLog[]
+  employee              Employee?
+
   @@map("users")
 }
 
 // ==================== PRODUCTS ====================
 
 model Category {
-  id          String    @id @default(uuid())
-  name        String    @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
   description String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  products    Product[]
+  products Product[]
+
   @@map("categories")
 }
 
@@ -49,6 +55,7 @@ model Product {
   id          String   @id @default(uuid())
   sku         String   @unique
   name        String
+  imageUrl    String?
   description String?
   price       Decimal  @db.Decimal(12, 2)
   costPrice   Decimal  @db.Decimal(12, 2)
@@ -57,11 +64,11 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
 
-  inventory   Inventory?
-  orderItems  OrderItem[]
+  inventory  Inventory?
+  orderItems OrderItem[]
 
   @@map("products")
 }
@@ -69,13 +76,13 @@ model Product {
 // ==================== INVENTORY ====================
 
 model Inventory {
-  id          String   @id @default(uuid())
-  quantity    Int      @default(0)
-  minStock    Int      @default(10)   // cảnh báo khi tồn kho thấp
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  quantity  Int      @default(0)
+  minStock  Int      @default(10) // cảnh báo khi tồn kho thấp
+  updatedAt DateTime @updatedAt
 
-  productId   String   @unique
-  product     Product  @relation(fields: [productId], references: [id])
+  productId String  @unique
+  product   Product @relation(fields: [productId], references: [id])
 
   transactions InventoryTransaction[]
 
@@ -83,21 +90,24 @@ model Inventory {
 }
 
 enum TransactionType {
-  IMPORT     // nhập hàng
-  EXPORT     // xuất bán
+  IMPORT // nhập hàng
+  EXPORT // xuất bán
   ADJUSTMENT // điều chỉnh
-  RETURN     // trả hàng
+  RETURN // trả hàng
 }
 
 model InventoryTransaction {
-  id          String          @id @default(uuid())
-  type        TransactionType
-  quantity    Int
-  note        String?
-  createdAt   DateTime        @default(now())
+  id        String          @id @default(uuid())
+  type      TransactionType
+  quantity  Int
+  note      String?
+  createdAt DateTime        @default(now())
 
   inventoryId String
   inventory   Inventory @relation(fields: [inventoryId], references: [id])
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
 
   @@map("inventory_transactions")
 }
@@ -105,16 +115,17 @@ model InventoryTransaction {
 // ==================== CUSTOMERS ====================
 
 model Customer {
-  id          String   @id @default(uuid())
-  name        String
-  phone       String?  @unique
-  email       String?
-  address     String?
-  totalSpent  Decimal  @default(0) @db.Decimal(12, 2)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(uuid())
+  name       String
+  phone      String?  @unique
+  email      String?
+  address    String?
+  totalSpent Decimal  @default(0) @db.Decimal(12, 2)
+  isActive   Boolean  @default(true) // mới thêm 
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  orders      Order[]
+  orders Order[]
 
   @@map("customers")
 }
@@ -122,11 +133,11 @@ model Customer {
 // ==================== ORDERS ====================
 
 enum OrderStatus {
-  PENDING    // chờ xử lý
-  CONFIRMED  // xác nhận
-  SHIPPING   // đang giao
-  COMPLETED  // hoàn thành
-  CANCELLED  // hủy
+  PENDING // chờ xử lý
+  CONFIRMED // xác nhận
+  SHIPPING // đang giao
+  COMPLETED // hoàn thành
+  CANCELLED // hủy
 }
 
 enum PaymentMethod {
@@ -154,28 +165,135 @@ model Order {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  customerId    String?
-  customer      Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
 
-  createdById   String
-  createdBy     User      @relation(fields: [createdById], references: [id])
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
 
-  items         OrderItem[]
+  items OrderItem[]
 
   @@map("orders")
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  quantity  Int
-  price     Decimal @db.Decimal(12, 2)
-  subtotal  Decimal @db.Decimal(12, 2)
+  id       String  @id @default(uuid())
+  quantity Int
+  price    Decimal @db.Decimal(12, 2)
+  subtotal Decimal @db.Decimal(12, 2)
 
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
 
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
+}
+
+// Lưu refresh token để support refresh / logout
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
+}
+
+// Audit log / activity trail
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String? // có thể null cho hệ thống
+  action     String // ví dụ: CREATE_ORDER, UPDATE_PRODUCT
+  entity     String // ví dụ: Order, Product, Inventory
+  entityId   String? // id của entity liên quan
+  beforeJson Json? // trạng thái trước khi thay đổi
+  afterJson  Json? // trạng thái sau khi thay đổi
+  meta       Json? // thông tin bổ sung (ip, note ...)
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// ==================== HR / PAYROLL ====================
+
+enum ShiftType {
+  MORNING
+  AFTERNOON
+  NIGHT
+}
+
+enum ViolationType {
+  LATE
+  EARLY
+  PACKING_ERROR
+  DAMAGED_GOODS
+  UNAUTHORIZED_ABSENCE
+}
+
+model Employee {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id])
+  baseSalary Decimal  @db.Decimal(12,2) @default(5000000)
+  shiftMoney Decimal  @db.Decimal(12,2) @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  shifts     Shift[]
+  violations Violation[]
+  payrolls   Payroll[]
+
+  @@map("employees")
+}
+
+model Shift {
+  id         String    @id @default(uuid())
+  date       DateTime
+  type       ShiftType
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  createdAt  DateTime  @default(now())
+
+  @@map("shifts")
+}
+
+model Violation {
+  id         String        @id @default(uuid())
+  type       ViolationType
+  note       String?
+  penalty    Decimal?      @db.Decimal(12,2) @default(0)
+  date       DateTime      @default(now())
+  employeeId String
+  employee   Employee      @relation(fields: [employeeId], references: [id])
+  createdAt  DateTime      @default(now())
+
+  @@map("violations")
+}
+
+model Payroll {
+  id                  String   @id @default(uuid())
+  employeeId          String
+  employee            Employee @relation(fields: [employeeId], references: [id])
+  month               Int
+  year                Int
+  baseSalary          Decimal  @db.Decimal(12,2)
+  shiftMoney          Decimal  @db.Decimal(12,2) @default(0)
+  shiftCount          Int
+  attendanceCoefficient Float
+  penalties           Decimal  @db.Decimal(12,2)
+  finalSalary         Decimal  @db.Decimal(12,2)
+  isLocked            Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("payrolls")
 }
